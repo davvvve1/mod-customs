@@ -1,0 +1,372 @@
+#include "Customs.h"
+
+namespace
+{
+    // Quest 52
+    constexpr uint32 QUEST_ID = 52;
+    constexpr uint32 CREATURE_PROWLER_ID = 118;
+    constexpr uint32 CREATURE_GRAY_FOREST_WOLF = 1922;
+
+    // EventCustomPlayerScript -> sod buff
+    constexpr uint32 SPELL_CUSTOM_BUFFS[] = {
+        0,      // 0 - Disabled
+        80865,  // 1 - 50%
+        80866,  // 2 - 100%
+        80867,  // 3 - 150%
+        80868,  // 4 - 200%
+        80869,  // 5 - 250%
+        80870   // 6 - 300%
+    };
+
+    // Helper function to read the config and safely get the spell ID
+    static uint32 GetConfiguredSodBuff()
+    {
+        uint32 buffLevel = sConfigMgr->GetOption<uint32>("SOD.buff", 6);
+
+        if (buffLevel < 1 || buffLevel > 6)
+        {
+            return 0; 
+        }
+
+        return SPELL_CUSTOM_BUFFS[buffLevel];
+    }
+}
+
+#pragma region Quests
+
+void QuestCustomPlayerScript::OnPlayerCreatureKill(Player* player, Creature* creature)
+{
+    if (!player || !creature)
+    {
+        return;
+    }
+
+    // https://www.wowhead.com/cata/quest=52/protect-the-frontier
+    // Quest 52 - Kill 8 Prowlers or Gray Forest Wolves and 5 Young Forest Bears, and then return to Guard Thomas at the east Elwynn bridge.
+    if (creature->GetEntry() == CREATURE_GRAY_FOREST_WOLF)
+    {
+        if (player->GetQuestStatus(QUEST_ID) == QUEST_STATUS_INCOMPLETE)
+        {
+            player->KilledMonsterCredit(CREATURE_PROWLER_ID);
+        }
+    }
+}
+
+#pragma endregion
+
+#pragma region Events
+
+void EventCustomPlayerScript::OnPlayerLogin(Player* player)
+{
+    if (!player)
+    {
+        return;
+    }
+
+    abuff = GetConfiguredSodBuff();
+
+    // This prevents them from stacking a sod's buff if the admin changed the config.
+    for (int i = 0; i <= 6; ++i)
+    {
+        spellToCheck = SPELL_CUSTOM_BUFFS[i];
+
+        // If they have a buff that IS NOT the currently configured one, remove it
+        if (spellToCheck != abuff && player->HasAura(spellToCheck))
+        {
+            player->RemoveAura(spellToCheck);
+        }
+    }
+
+    // check if player already have aura then if not then cast aura to player
+    if (!abuff != 0 && !player->HasAura(SPELL_CUSTOM_BUFF))
+    {
+        player->CastSpell(player, SPELL_CUSTOM_BUFF, true);
+    }
+}
+
+void EventCustomPlayerScript::OnPlayerLogout(Player* player)
+{
+    if (!player)
+    {
+        return;
+    }
+
+    // check if player has sod buffs
+    for (int i = 0; i <= 6; ++i)
+    {
+        if (player->HasAura(SPELL_CUSTOM_BUFF[i]))
+        {
+            player->RemoveAura(SPELL_CUSTOM_BUFF[i]);
+        }
+    }
+}
+
+#pragma endregion
+
+#pragma region DungeonRespawn
+
+bool DSPlayerScript::IsInsideDungeonRaid(Player* player)
+{
+    if (!player)
+    {
+        return false;
+    }
+
+    Map* map = player->GetMap();
+    
+    if (!map)
+    {
+        return false;
+    }
+
+    if (!map->IsDungeon() && !map->IsRaid())
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void DSPlayerScript::OnPlayerReleasedGhost(Player* player)
+{
+    if (!drEnabled || !IsInsideDungeonRaid(player))
+    {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(teleportMutex);
+    playersToTeleport.push_back(player->GetGUID());
+}
+
+void DSPlayerScript::ResurrectPlayer(Player* player)
+{
+    player->ResurrectPlayer(respawnHpPct / 100.0f, false);
+    player->SpawnCorpseBones();
+}
+
+bool DSPlayerScript::OnPlayerBeforeTeleport(Player* player, uint32 mapid, float /*x*/, float /*y*/, float /*z*/, float /*orientation*/, uint32 /*options*/, Unit* /*target*/)
+{
+    if (!drEnabled || !player)
+    {
+        return true;
+    }
+
+    if (player->GetMapId() != mapid)
+    {
+        auto prData = GetOrCreateRespawnData(player);
+        prData->isTeleportingNewMap = true;
+    }
+
+    if (!IsInsideDungeonRaid(player) || !player->isDead())
+    {
+        return true;
+    }
+
+    bool canRestore = false;
+
+    {
+        std::lock_guard<std::mutex> lock(teleportMutex);
+        auto it = std::find(playersToTeleport.begin(), playersToTeleport.end(), player->GetGUID());
+
+        if (it != playersToTeleport.end())
+        {
+            playersToTeleport.erase(it);
+            canRestore = true;
+        }
+    }
+
+    if (!canRestore)
+    {
+        return true;
+    }
+
+    auto prData = GetOrCreateRespawnData(player);
+
+    if (prData && prData->dungeon.map != -1 && prData->dungeon.map == int32(player->GetMapId()))
+    {
+        player->TeleportTo(prData->dungeon.map, prData->dungeon.x, prData->dungeon.y, prData->dungeon.z, prData->dungeon.o);
+        ResurrectPlayer(player);
+        return false;
+    }
+
+    return true;
+}
+
+void DSWorldScript::OnAfterConfigLoad(bool reload)
+{
+    if (reload)
+    {
+        SaveRespawnData();
+        respawnData.clear();
+    }
+
+    drEnabled = sConfigMgr->GetOption<bool>("DungeonRespawn.Enable", false);
+    respawnHpPct = sConfigMgr->GetOption<float>("DungeonRespawn.RespawnHealthPct", 50.0f);
+
+    QueryResult qResult = CharacterDatabase.Query("SELECT `guid`, `map`, `x`, `y`, `z`, `o` FROM `dungeonrespawn_playerinfo`");
+
+    if (qResult)
+    {
+        uint32 dataCount = 0;
+
+        do
+        {
+            Field* fields = qResult->Fetch();
+
+            PlayerRespawnData prData;
+            DungeonData dData;
+            prData.guid = ObjectGuid(fields[0].Get<uint64>());
+            dData.map = fields[1].Get<int32>();
+            dData.x = fields[2].Get<float>();
+            dData.y = fields[3].Get<float>();
+            dData.z = fields[4].Get<float>();
+            dData.o = fields[5].Get<float>();
+            prData.dungeon = dData;
+            prData.isTeleportingNewMap = false;
+            prData.inDungeon = false;
+
+            respawnData.push_back(prData);
+
+            dataCount++;
+        }
+        while (qResult->NextRow());
+
+        LOG_INFO("module", "Loaded '{}' rows from 'dungeonrespawn_playerinfo' table.", dataCount);
+    }
+    else
+    {
+        LOG_INFO("module", "Loaded '0' rows from 'dungeonrespawn_playerinfo' table.");
+        return;
+    }
+}
+
+void DSWorldScript::OnShutdown()
+{
+    SaveRespawnData();
+}
+
+void DSWorldScript::SaveRespawnData()
+{
+    for (const auto& prData : respawnData)
+    {
+        if (prData.inDungeon)
+        {
+            CharacterDatabase.Execute(
+                "INSERT INTO `dungeonrespawn_playerinfo` (guid, map, x, y, z, o) VALUES ({}, {}, {}, {}, {}, {}) ON DUPLICATE KEY UPDATE map={}, x={}, y={}, z={}, o={}",
+                prData.guid.GetRawValue(),
+                prData.dungeon.map,
+                prData.dungeon.x,
+                prData.dungeon.y,
+                prData.dungeon.z,
+                prData.dungeon.o,
+                prData.dungeon.map,
+                prData.dungeon.x,
+                prData.dungeon.y,
+                prData.dungeon.z,
+                prData.dungeon.o
+            );
+        }
+        else
+        {
+            CharacterDatabase.Execute(
+                "DELETE FROM `dungeonrespawn_playerinfo` WHERE guid = {}",
+                prData.guid.GetRawValue()
+            );
+        }
+    }
+}
+
+PlayerRespawnData* DSPlayerScript::GetOrCreateRespawnData(Player* player)
+{
+    ObjectGuid guid = player->GetGUID();
+
+    if (respawnData.find(guid) == respawnData.end())
+    {
+        PlayerRespawnData newPrData;
+        newPrData.guid = guid;
+        newPrData.dungeon = {
+            -1,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f
+        };
+        newPrData.isTeleportingNewMap = false;
+        newPrData.inDungeon = false;
+        respawnData[guid] = newPrData;
+    }
+
+    return &respawnData[guid];
+}
+
+void DSPlayerScript::OnPlayerMapChanged(Player* player)
+{
+    if (!player)
+    {
+        return;
+    }
+
+    auto prData = GetOrCreateRespawnData(player);
+
+    if (!prData)
+    {
+        return;
+    }
+
+    bool inDungeon = IsInsideDungeonRaid(player);
+    prData->inDungeon = inDungeon;
+
+    if (!inDungeon)
+    {
+        return;
+    }
+
+    if (!prData->isTeleportingNewMap)
+    {
+        return;
+    }
+
+    prData->dungeon.map = player->GetMapId();
+    prData->dungeon.x = player->GetPositionX();
+    prData->dungeon.y = player->GetPositionY();
+    prData->dungeon.z = player->GetPositionZ();
+    prData->dungeon.o = player->GetOrientation();
+
+    prData->isTeleportingNewMap = false;
+}
+
+void DSPlayerScript::OnPlayerLogin(Player* player)
+{
+    if (!player)
+    {
+        return;
+    }
+
+    GetOrCreateRespawnData(player);
+}
+
+void DSPlayerScript::OnPlayerLogout(Player* player)
+{
+    if (!player)
+    {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(teleportMutex);
+    auto it = std::find(playersToTeleport.begin(), playersToTeleport.end(), player->GetGUID());
+
+    if (it != playersToTeleport.end())
+    {
+        playersToTeleport.erase(it);
+    }
+}
+
+#pragma endregion
+
+void CustomScripts()
+{
+    new QuestCustomPlayerScript();
+    new EventCustomPlayerScript();
+    new DSWorldScript();
+    new DSPlayerScript();
+}
