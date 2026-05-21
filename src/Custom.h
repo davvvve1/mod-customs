@@ -9,24 +9,23 @@
 class QuestCustomPlayerScript : public PlayerScript
 {
 public:
-    QuestCustomPlayerScript() : PlayerScript("QuestCustomPlayerScript")
-    {
-        //
-    }
+    QuestCustomPlayerScript() : PlayerScript("QuestCustomPlayerScript", {
+        PLAYERHOOK_ON_CREATURE_KILL
+    }){ }
 
-    void OnPlayerCreatureKill(Player* /*player*/, Creature* /*creature*/) override;
+    void OnPlayerCreatureKill(Player* player, Creature* creature) override;
 };
 
 class EventCustomPlayerScript : public PlayerScript
 {
 public:
-    EventCustomPlayerScript() : PlayerScript("EventCustomPlayerScript")
-    {
-        //
-    }
+    EventCustomPlayerScript() : PlayerScript("EventCustomPlayerScript", {
+        PLAYERHOOK_ON_LOGIN,
+        PLAYERHOOK_ON_LOGOUT,
+    }) { }
 
-    void OnPlayerLogin(Player* /*player*/) override;
-    void OnPlayerLogout(Player* /*player*/) override;
+    void OnPlayerLogin(Player* player) override;
+    void OnPlayerLogout(Player* player) override;
 }
 
 #endif // MODULE_CUSTOM_H
