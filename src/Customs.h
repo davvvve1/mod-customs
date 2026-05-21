@@ -8,6 +8,7 @@
 #include "Config.h"
 #include "Chat.h"
 #include "QuestDef.h"
+#include "DatabaseEnv.h"
 
 #include <vector>
 #include <unordered_map>
@@ -39,10 +40,6 @@ public:
 
     void OnPlayerLogin(Player* player) override;
     void OnPlayerLogout(Player* player) override;
-
-private:
-    uint32 abuff;
-    uint32 spellToCheck;
 };
 
 #pragma endregion
@@ -65,11 +62,6 @@ struct PlayerRespawnData
     bool isTeleportingNewMap;
     bool inDungeon;
 };
-
-std::vector<PlayerRespawnData> respawnData;
-
-bool drEnabled;
-float respawnHpPct;
 
 class DSPlayerScript : public PlayerScript
 {

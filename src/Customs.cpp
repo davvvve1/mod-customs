@@ -30,6 +30,10 @@ namespace
 
         return SPELL_CUSTOM_BUFFS[buffLevel];
     }
+
+    std::unordered_map<ObjectGuid, PlayerRespawnData> respawnData;
+    bool drEnabled = false;
+    float respawnHpPct = 50.0f;
 }
 
 #pragma region Quests
@@ -63,24 +67,24 @@ void EventCustomPlayerScript::OnPlayerLogin(Player* player)
         return;
     }
 
-    abuff = GetConfiguredSodBuff();
+    uint32 abuff = GetConfiguredSodBuff();
 
     // This prevents them from stacking a sod's buff if the admin changed the config.
     for (int i = 0; i <= 6; ++i)
     {
-        spellToCheck = SPELL_CUSTOM_BUFFS[i];
+        uint32 spellToCheck = SPELL_CUSTOM_BUFFS[i];
 
         // If they have a buff that IS NOT the currently configured one, remove it
-        if (spellToCheck != abuff && player->HasAura(spellToCheck))
+        if ((spellToCheck != 0) && (spellToCheck != abuff) && player->HasAura(spellToCheck))
         {
             player->RemoveAura(spellToCheck);
         }
     }
 
     // check if player already have aura then if not then cast aura to player
-    if (!abuff != 0 && !player->HasAura(SPELL_CUSTOM_BUFF))
+    if ((abuff != 0) && !player->HasAura(abuff))
     {
-        player->CastSpell(player, SPELL_CUSTOM_BUFF, true);
+        player->CastSpell(player, abuff, true);
     }
 }
 
@@ -94,9 +98,11 @@ void EventCustomPlayerScript::OnPlayerLogout(Player* player)
     // check if player has sod buffs
     for (int i = 0; i <= 6; ++i)
     {
-        if (player->HasAura(SPELL_CUSTOM_BUFF[i]))
+        uint32 spellToCheck = SPELL_CUSTOM_BUFFS[i];
+        
+        if ((spellToCheck != 0) && player->HasAura(spellToCheck))
         {
-            player->RemoveAura(SPELL_CUSTOM_BUFF[i]);
+            player->RemoveAura(spellToCheck);
         }
     }
 }
@@ -113,7 +119,7 @@ bool DSPlayerScript::IsInsideDungeonRaid(Player* player)
     }
 
     Map* map = player->GetMap();
-    
+
     if (!map)
     {
         return false;
@@ -214,19 +220,16 @@ void DSWorldScript::OnAfterConfigLoad(bool reload)
             Field* fields = qResult->Fetch();
 
             PlayerRespawnData prData;
-            DungeonData dData;
             prData.guid = ObjectGuid(fields[0].Get<uint64>());
-            dData.map = fields[1].Get<int32>();
-            dData.x = fields[2].Get<float>();
-            dData.y = fields[3].Get<float>();
-            dData.z = fields[4].Get<float>();
-            dData.o = fields[5].Get<float>();
-            prData.dungeon = dData;
+            prData.dungeon.map = fields[1].Get<int32>();
+            prData.dungeon.x = fields[2].Get<float>();
+            prData.dungeon.y = fields[3].Get<float>();
+            prData.dungeon.z = fields[4].Get<float>();
+            prData.dungeon.o = fields[5].Get<float>();
             prData.isTeleportingNewMap = false;
             prData.inDungeon = false;
 
-            respawnData.push_back(prData);
-
+            respawnData[prData.guid] = prData;
             dataCount++;
         }
         while (qResult->NextRow());
@@ -247,7 +250,7 @@ void DSWorldScript::OnShutdown()
 
 void DSWorldScript::SaveRespawnData()
 {
-    for (const auto& prData : respawnData)
+    for (const auto& [guid, prData] : respawnData)
     {
         if (prData.inDungeon)
         {
