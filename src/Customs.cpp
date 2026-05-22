@@ -25,7 +25,7 @@ namespace
 
         if (buffLevel < 1 || buffLevel > 6)
         {
-            return 0; 
+            return 0;
         }
 
         return SPELL_CUSTOM_BUFFS[buffLevel];
@@ -34,7 +34,7 @@ namespace
     std::unordered_map<ObjectGuid, PlayerRespawnData> respawnData;
     bool drEnabled = false;
     float respawnHpPct = 50.0f;
-}
+};
 
 #pragma region Quests
 
@@ -99,7 +99,7 @@ void EventCustomPlayerScript::OnPlayerLogout(Player* player)
     for (int i = 0; i <= 6; ++i)
     {
         uint32 spellToCheck = SPELL_CUSTOM_BUFFS[i];
-        
+
         if ((spellToCheck != 0) && player->HasAura(spellToCheck))
         {
             player->RemoveAura(spellToCheck);
