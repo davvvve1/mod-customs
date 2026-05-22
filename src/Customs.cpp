@@ -366,7 +366,7 @@ void DSPlayerScript::OnPlayerLogout(Player* player)
 
 #pragma endregion
 
-void CustomScripts()
+void SC_addCustomsScripts()
 {
     new QuestCustomPlayerScript();
     new EventCustomPlayerScript();
