@@ -20,26 +20,12 @@ namespace Hearthstone
     {
     public:
         HearthstoneWorld() : WorldScript("HearthstoneWorld", {
-            WORLDHOOK_ON_BEFORE_CONFIG_LOAD
+            WORLDHOOK_ON_BEFORE_CONFIG_LOAD,
+            WORLDHOOK_ON_STARTUP
         }) { }
 
         void OnBeforeConfigLoad(bool /*reload*/) override;
-    };
-
-    class HearthstoneSpellCooldown : public SpellScriptLoader
-    {
-    public:
-        HearthstoneSpellCooldown() : SpellScriptLoader("HearthstoneSpellCooldown") { }
-
-        SpellScript* GetSpellScript() const override;
-
-        class HearthstoneSpellScript : public SpellScript
-        {
-            PrepareSpellScript(HearthstoneSpellScript);
-
-            void HandleAfterCast();
-            void Register() override;
-        };
+        void OnStartup() override;
     };
 } // Hearthstone
 

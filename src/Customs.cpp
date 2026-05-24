@@ -7,5 +7,4 @@ void SC_addCustomsScripts()
     new DungeonRespawn::DSWorldScript();
     new DungeonRespawn::DSPlayerScript();
     new Hearthstone::HearthstoneWorld();
-    new Hearthstone::HearthstoneSpellCooldown();
 }

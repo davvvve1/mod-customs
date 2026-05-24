@@ -15,34 +15,23 @@ namespace Hearthstone
         Cooldown = sConfigMgr->GetOption<uint32>("Hearthstone.Cooldown", 1);
     }
 
-    SpellScript* HearthstoneSpellCooldown::GetSpellScript() const
-    {
-        return new HearthstoneSpellScript();
-    }
-
-    void HearthstoneSpellCooldown::HearthstoneSpellScript::HandleAfterCast()
+    void HearthstoneWorld::OnStartup()
     {
         if (!Enabled)
         {
             return;
         }
 
-        if (Player* player = GetCaster()->ToPlayer())
+        SpellInfo* hsPell = const_cast<SpellInfo*>(sSpellMgr->GetSpellInfo(8690));
+
+        if (hsSpell)
         {
-            uint32 spellId = GetSpellInfo()->Id;
-            uint32 itemId = 6948;
+            // The core stores RecoveryTime in milliseconds, so we multiply by 1000
+            uint32 newCooldownMs = Cooldown * 1000;
 
-            player->RemoveSpellCooldown(spellId, true);
-
-            if (Cooldown > 0)
-            {
-                player->AddSpellCooldown(spellId, itemId, time(nullptr) + Cooldown, true);
-            }
+            // Update both the spell's absolute cooldown and its category shared cooldown
+            hsSpell->RecoveryTime = newCooldownMs;
+            hsSpell->CategoryRecoveryTime = newCooldownMs;
         }
-    }
-
-    void HearthstoneSpellCooldown::HearthstoneSpellScript::Register()
-    {
-        AfterCast += SpellCastFn(HearthstoneSpellCooldown::HearthstoneSpellScript::HandleAfterCast);
     }
 } // Hearthstone
