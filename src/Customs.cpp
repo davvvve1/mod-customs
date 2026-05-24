@@ -3,8 +3,7 @@
 void SC_addCustomsScripts()
 {
     new CustomQuests::Quest52();
-    new SeasonOfDiscovery::sod();
+    new SeasonOfDiscovery::SeasonOfDiscovery();
     new DungeonRespawn::DSWorldScript();
     new DungeonRespawn::DSPlayerScript();
-    new Hearthstone::HearthstoneWorld();
 }

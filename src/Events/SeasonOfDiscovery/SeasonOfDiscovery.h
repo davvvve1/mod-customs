@@ -11,19 +11,25 @@
 
 namespace SeasonOfDiscovery
 {
-    extern bool Enabled;
-
-    class sod : public PlayerScript
+    class SeasonOfDiscovery : public PlayerScript, public WorldScript
     {
     public:
-        sod() : PlayerScript("sod", {
+        SeasonOfDiscovery() : PlayerScript("SeasonOfDiscovery", {
             PLAYERHOOK_ON_LOGIN,
             PLAYERHOOK_ON_LOGOUT,
+        }),
+        WorldScript("SeasonOfDiscovery", {
+            WORLDHOOK_ON_AFTER_CONFIG_LOAD
         }) { }
 
+    private:
+        void OnAfterConfigLoad(bool /*reload*/) override;
         void OnPlayerLogin(Player* player) override;
         void OnPlayerLogout(Player* player) override;
+
+        bool Enabled;
+        uint32 BuffLevel;
     };
-};
+}; // SeasonOfDiscovery
 
 #endif //MOD_CUSTOMS_SOD_H

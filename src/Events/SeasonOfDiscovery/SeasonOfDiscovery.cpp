@@ -6,8 +6,6 @@
 
 namespace SeasonOfDiscovery
 {
-    bool Enabled = true;
-
     // EventCustomPlayerScript -> sod buff
     constexpr uint32 SPELL_CUSTOM_BUFFS[] = {
         0,      // 0 - Disabled
@@ -19,49 +17,52 @@ namespace SeasonOfDiscovery
         80870   // 6 - 300%
     };
 
-    // Helper function to read the config and safely get the spell ID
-    static uint32 GetConfiguredSodBuff()
+	void SeasonOfDiscovery::OnAfterConfigLoad(bool /*reload*/)
+	{
+		BuffLevel = sConfigMgr->GetOption<uint32>("SOD.buff", 6);
+
+		if (BuffLevel < 1 || BuffLevel > 6)
+		{
+			Enabled = false;
+		}
+		else
+		{
+			Enabled = true;
+		}
+	}
+
+    void SeasonOfDiscovery::OnPlayerLogin(Player* player)
     {
-        uint32 buffLevel = sConfigMgr->GetOption<uint32>("SOD.buff", 6);
-
-        if (buffLevel < 1 || buffLevel > 6)
-        {
-            Enabled = false;
-            return 0;
-        }
-
-        return SPELL_CUSTOM_BUFFS[buffLevel];
-    }
-
-    void sod::OnPlayerLogin(Player* player)
-    {
-        if (!Enabled || !player)
+        if (!player)
         {
             return;
         }
 
-        uint32 abuff = GetConfiguredSodBuff();
-
         // This prevents them from stacking a sod's buff if the admin changed the config.
-        for (int i = 0; i <= 6; ++i)
+        for (uint32 i = 0; i < sizeof(SPELL_CUSTOM_BUFFS) / sizeof(uint32); ++i)
         {
             uint32 spellToCheck = SPELL_CUSTOM_BUFFS[i];
 
             // If they have a buff that IS NOT the currently configured one, remove it
-            if ((spellToCheck != 0) && (spellToCheck != abuff) && player->HasAura(spellToCheck))
+            if ((spellToCheck != 0) && (spellToCheck != SPELL_CUSTOM_BUFFS[BuffLevel]) && player->HasAura(spellToCheck))
             {
                 player->RemoveAura(spellToCheck);
             }
         }
 
-        // check if player already have aura then if not then cast aura to player
-        if ((abuff != 0) && !player->HasAura(abuff))
+        if (!Enabled)
         {
-            player->CastSpell(player, abuff, true);
+            return;
+        }
+
+        // check if player already have aura then if not then cast aura to player
+        if ((SPELL_CUSTOM_BUFFS[BuffLevel] != 0) && !player->HasAura(SPELL_CUSTOM_BUFFS[BuffLevel]))
+        {
+            player->CastSpell(player, SPELL_CUSTOM_BUFFS[BuffLevel], true);
         }
     }
 
-    void sod::OnPlayerLogout(Player* player)
+    void SeasonOfDiscovery::OnPlayerLogout(Player* player)
     {
         if (!Enabled || !player)
         {
@@ -69,7 +70,7 @@ namespace SeasonOfDiscovery
         }
 
         // check if player has sod buffs
-        for (int i = 0; i <= 6; ++i)
+        for (uint32 i = 0; i < sizeof(SPELL_CUSTOM_BUFFS) / sizeof(uint32); ++i)
         {
             uint32 spellToCheck = SPELL_CUSTOM_BUFFS[i];
 

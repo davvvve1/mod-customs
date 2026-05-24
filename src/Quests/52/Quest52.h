@@ -21,6 +21,7 @@ namespace CustomQuests
             PLAYERHOOK_ON_CREATURE_KILL
         }){ }
 
+	private:
         void OnPlayerCreatureKill(Player* player, Creature* creature) override;
     };
 };
