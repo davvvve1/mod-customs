@@ -12,4 +12,3 @@ void Addmod_customsScripts()
 {
     SC_addCustomsScripts();
 }
-

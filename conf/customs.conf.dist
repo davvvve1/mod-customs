@@ -26,6 +26,23 @@ SOD.buff = 6
 # Dungeon Respawn configuration
 ########################################
 #
+#    Hearthstone.cEnabled
+#        Description: Enable the Hearthstone Fast Cooldown module.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+Hearthstone.cEnabled = 1
+
+#    Hearthstone.Cooldown
+#        Description: Cooldown of Hearthstone in seconds.
+#        Default:     1
+
+Hearthstone.Cooldown = 1
+
+########################################
+# Dungeon Respawn configuration
+########################################
+#
 #    DungeonRespawn.Enable
 #        Description: Enables the Dungeon Respawn module.
 #        Default:     0 - Disabled
