@@ -6,10 +6,9 @@
 #define MOD_CUSTOMS_HEARTHSTONE_H
 
 #include "ScriptMgr.h"
-#include "Player.h"
 #include "Config.h"
-#include "SpellScript.h"
-#include "SpellScriptLoader.h"
+#include "SpellMgr.h"
+#include "SpellInfo.h"
 
 namespace Hearthstone
 {
