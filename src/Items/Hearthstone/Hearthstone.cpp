@@ -22,7 +22,7 @@ namespace Hearthstone
             return;
         }
 
-        SpellInfo* hsPell = const_cast<SpellInfo*>(sSpellMgr->GetSpellInfo(8690));
+        SpellInfo* hsSpell = const_cast<SpellInfo*>(sSpellMgr->GetSpellInfo(8690));
 
         if (hsSpell)
         {
