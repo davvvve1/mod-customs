@@ -11,6 +11,9 @@
 
 namespace SeasonOfDiscovery
 {
+    bool Enabled;
+    uint32 BuffLevel;
+
     class SeasonOfDiscovery : public PlayerScript, public WorldScript
     {
     public:
@@ -23,9 +26,6 @@ namespace SeasonOfDiscovery
         }) { }
 
     private:
-        bool Enabled;
-        uint32 BuffLevel;
-
         void OnAfterConfigLoad(bool /*reload*/) override;
         void OnPlayerLogin(Player* player) override;
         void OnPlayerLogout(Player* player) override;

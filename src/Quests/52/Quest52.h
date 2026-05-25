@@ -12,6 +12,8 @@
 
 namespace CustomQuests
 {
+    bool Enabled;
+
     class Quest52 : public PlayerScript, public WorldScript
     {
     public:
@@ -23,8 +25,6 @@ namespace CustomQuests
         }){ }
 
     private:
-        bool Enabled;
-
         void OnAfterConfigLoad(bool /*reload*/) override;
         void OnPlayerCreatureKill(Player* player, Creature* creature) override;
     };
