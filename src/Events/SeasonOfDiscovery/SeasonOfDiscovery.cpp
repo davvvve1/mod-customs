@@ -2,7 +2,7 @@
 // Created by development on 5/24/26.
 //
 
-#include "sod.h"
+#include "SeasonOfDiscovery.h"
 
 namespace SeasonOfDiscovery
 {
