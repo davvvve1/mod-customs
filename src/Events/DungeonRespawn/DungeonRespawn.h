@@ -37,6 +37,10 @@ namespace DungeonRespawn
         bool inDungeon;
     };
 
+    std::unordered_map<ObjectGuid, PlayerRespawnData> respawnData;
+    bool drEnabled;
+    float respawnHpPct;
+
     class DSPlayerScript : public PlayerScript
     {
     public:

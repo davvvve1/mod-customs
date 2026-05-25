@@ -12,17 +12,21 @@
 
 namespace CustomQuests
 {
-    extern bool Enabled;
-
-    class Quest52 : public PlayerScript
+    class Quest52 : public PlayerScript, public WorldScript
     {
     public:
         Quest52() : PlayerScript("Quest52", {
             PLAYERHOOK_ON_CREATURE_KILL
+        }),
+        WorldScript("Quest52", {
+            WORLDHOOK_ON_AFTER_CONFIG_LOAD
         }){ }
 
     private:
+        void OnAfterConfigLoad(bool /*reload*/) override;
         void OnPlayerCreatureKill(Player* player, Creature* creature) override;
+
+        bool Enabled;
     };
 };
 

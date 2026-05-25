@@ -6,10 +6,6 @@
 
 namespace DungeonRespawn
 {
-    std::unordered_map<ObjectGuid, PlayerRespawnData> respawnData;
-    bool drEnabled = false;
-    float respawnHpPct = 50.0f;
-
     bool DSPlayerScript::IsInsideDungeonRaid(Player* player)
     {
         if (!player)
