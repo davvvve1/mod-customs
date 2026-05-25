@@ -30,7 +30,7 @@ namespace DungeonRespawn
 
     void DSPlayerScript::OnPlayerReleasedGhost(Player* player)
     {
-        if (!drEnabled || !IsInsideDungeonRaid(player))
+        if (!Enabled || !IsInsideDungeonRaid(player))
         {
             return;
         }
@@ -47,7 +47,7 @@ namespace DungeonRespawn
 
     bool DSPlayerScript::OnPlayerBeforeTeleport(Player* player, uint32 mapid, float /*x*/, float /*y*/, float /*z*/, float /*orientation*/, uint32 /*options*/, Unit* /*target*/)
     {
-        if (!drEnabled || !player)
+        if (!Enabled || !player)
         {
             return true;
         }
@@ -101,7 +101,7 @@ namespace DungeonRespawn
             respawnData.clear();
         }
 
-        drEnabled = sConfigMgr->GetOption<bool>("DungeonRespawn.Enable", false);
+        Enabled = sConfigMgr->GetOption<bool>("DungeonRespawn.Enable", false);
         respawnHpPct = sConfigMgr->GetOption<float>("DungeonRespawn.RespawnHealthPct", 50.0f);
 
         QueryResult qResult = CharacterDatabase.Query("SELECT `guid`, `map`, `x`, `y`, `z`, `o` FROM `dungeonrespawn_playerinfo`");

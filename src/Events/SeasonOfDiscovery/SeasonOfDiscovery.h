@@ -11,8 +11,8 @@
 
 namespace SeasonOfDiscovery
 {
-    bool Enabled;
-    uint32 BuffLevel;
+    inline bool Enabled;
+    inline uint32 BuffLevel;
 
     class SeasonOfDiscovery : public PlayerScript, public WorldScript
     {

@@ -12,7 +12,7 @@
 
 namespace CustomQuests
 {
-    bool Enabled;
+    inline bool q52Enabled;
 
     class Quest52 : public PlayerScript, public WorldScript
     {
