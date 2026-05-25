@@ -23,10 +23,10 @@ namespace CustomQuests
         }){ }
 
     private:
+        bool Enabled;
+
         void OnAfterConfigLoad(bool /*reload*/) override;
         void OnPlayerCreatureKill(Player* player, Creature* creature) override;
-
-        bool Enabled;
     };
 };
 
