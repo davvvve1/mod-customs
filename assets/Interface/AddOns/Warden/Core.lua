@@ -483,18 +483,7 @@ StaticPopupDialogs["WARDEN_CONFIRM_CLEANUP"] = {
     button1      = YES, button2 = NO, timeout = 0,
     whileDead    = true, hideOnEscape = true,
     OnAccept     = function()
-        SendChatMessage(".playerbots bot remove *", "SAY")
-        SendChatMessage("/script LeaveParty()", "SAY")
-        ns.MsgWarn("Cleanup: removed all bots.")
-    end,
-}
-
-StaticPopupDialogs["WARDEN_CONFIRM_HARD_RESPEC"] = {
-    text         = "HARD ReSpec all bots to the selected quality?\n(uses quality from Settings tab)",
-    button1      = YES, button2 = NO, timeout = 0,
-    whileDead    = true, hideOnEscape = true,
-    OnAccept     = function()
-        local botNames = {}
+        local bots = {}
         local units = {}
 
         if GetNumRaidMembers() > 0 then
@@ -508,15 +497,49 @@ StaticPopupDialogs["WARDEN_CONFIRM_HARD_RESPEC"] = {
                 local name = UnitName(u)
 
                 if name then
-                    table.insert(botNames, name)
+                    table.insert(bots, name)
+                end
+            end
+        end
+
+        if #bots > 0 then
+            SendChatMessage(".playerbots bot remove *", "SAY")
+            LeaveParty()
+            ns.MsgWarn("Cleanup: removed all bots.")
+        else
+            ns.MsgWarn("Cleanup: no bots to remove.")
+        end
+    end,
+}
+
+StaticPopupDialogs["WARDEN_CONFIRM_HARD_RESPEC"] = {
+    text         = "HARD ReSpec all bots to the selected quality?\n(uses quality from Settings tab)",
+    button1      = YES, button2 = NO, timeout = 0,
+    whileDead    = true, hideOnEscape = true,
+    OnAccept     = function()
+        local bots = {}
+        local units = {}
+
+        if GetNumRaidMembers() > 0 then
+            for i = 1, GetNumRaidMembers() do table.insert(units, "raid" .. i) end
+        elseif GetNumPartyMembers() > 0 then
+            for i = 1, GetNumPartyMembers() do table.insert(units, "party" .. i) end
+        end
+
+        for _, u in ipairs(units) do
+            if UnitExists(u) and UnitIsPlayer(u) and not UnitIsUnit(u, "player") then
+                local name = UnitName(u)
+
+                if name then
+                    table.insert(bots, name)
                 end
             end
         end
 
         local quality = (ns.Persistence and ns.Persistence.DB and ns.Persistence.DB.autoInitQuality) or "legendary"
 
-        if #botNames > 0 then
-            local command = ".playerbots bot init=" .. quality .. " " .. table.concat(botNames, ",")
+        if #bots > 0 then
+            local command = ".playerbots bot init=" .. quality .. " " .. table.concat(bots, ",")
 
             SendChatMessage(command, "SAY")
             ns.MsgWarn("Hard ReSpec: sent `.playerbots bot init=" .. quality .. "`.")
@@ -530,7 +553,7 @@ StaticPopupDialogs["WARDEN_CONFIRM_HARD_RESPEC"] = {
 -- Level-up handler
 -- ----------------------------------------------------------
 function ns.AutoInitOnLevelUp(newLevel)
-    local botNames = {}
+    local bots = {}
     local units = {}
 
     if GetNumRaidMembers() > 0 then
@@ -544,18 +567,18 @@ function ns.AutoInitOnLevelUp(newLevel)
             local name = UnitName(u)
 
             if name then
-                table.insert(botNames, name)
+                table.insert(bots, name)
             end
         end
     end
 
     local quality = (ns.Persistence and ns.Persistence.DB and ns.Persistence.DB.autoInitQuality) or "legendary"
 
-    if #botNames > 0 then
-        local command = ".playerbots bot init=" .. quality .. " " .. table.concat(botNames, ",")
+    if #bots > 0 then
+        local command = ".playerbots bot init=" .. quality .. " " .. table.concat(bots, ",")
 
         SendChatMessage(command, "SAY")
-        ns.MsgInfo("Auto-initializing party bots: " .. table.concat(botNames, ", "))
+        ns.MsgInfo("Auto-initializing party bots: " .. table.concat(bots, ", "))
     end
 end
 
