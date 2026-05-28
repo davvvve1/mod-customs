@@ -12,7 +12,7 @@ ns.Persistence.DB = nil
 -- so a future default change propagates to existing users.
 local COMMIT_SCALARS = {
     "version", "presetsVersion",
-    "lastComp", "autoRaidDuringBuild", "autoSpec",
+    "lastComp", "autoRaidDuringBuild", "autoSpec", "autoInitQuality",
     "bloodlust", "aoe", "burn",
     "disperseDist", "minimapAngle", "masterScale", "activeTab",
 }
@@ -35,6 +35,7 @@ local function initDB()
     if type(db.lastComp)             ~= "string"  then db.lastComp = "" end
     if type(db.autoRaidDuringBuild)  ~= "boolean" then db.autoRaidDuringBuild = true end
     if type(db.autoSpec)             ~= "boolean" then db.autoSpec = true end
+    if type(db.autoInitQuality)      ~= "string"  then db.autoInitQuality = "legendary" end
     if type(db.bloodlust)            ~= "boolean" then db.bloodlust = false end
     -- Strategy toggles the sword HUD status strip reads. Must persist or
     -- every /reload wipes them.

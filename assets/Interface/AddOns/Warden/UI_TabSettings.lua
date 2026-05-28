@@ -41,7 +41,7 @@ function ns.UI.Tabs.Settings.BuildInto(pane)
     -- ============================================================
     -- Panel 1 - Global settings
     -- ============================================================
-    local globalP = ns.UI.Panel.Create(content, contentW - 16, 130, "Global settings")
+    local globalP = ns.UI.Panel.Create(content, contentW - 16, 170, "Global settings")
     globalP:SetPoint("TOPLEFT", content, "TOPLEFT", 8, -4)
 
     -- Thin adapter over ns.UI.Check.Make so existing call-sites keep the
@@ -98,6 +98,43 @@ function ns.UI.Tabs.Settings.BuildInto(pane)
         end
     end)
     UIDropDownMenu_SetText(sizeDrop, labelForScale(db.masterScale))
+
+    -- Auto Init Quality dropdown
+    local QUAL_PRESETS = {
+        { label = "Normal",    value = "normal" },
+        { label = "Uncommon",  value = "uncommon" },
+        { label = "Rare",      value = "rare" },
+        { label = "Epic",      value = "epic" },
+        { label = "Legendary", value = "legendary" },
+    }
+    local function labelForQual(q)
+        for _, p in ipairs(QUAL_PRESETS) do
+            if p.value == q then return p.label end
+        end
+        return "Legendary"
+    end
+
+    local qualLbl = globalP.content:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    qualLbl:SetPoint("TOPLEFT", globalP.content, "TOPLEFT", 4, -98)
+    qualLbl:SetText("Level up Init Quality")
+
+    local qualDrop = CreateFrame("Frame", "WardenQualDrop", globalP.content, "UIDropDownMenuTemplate")
+    qualDrop:SetPoint("TOPLEFT", qualLbl, "BOTTOMLEFT", -16, -4)
+    ns.UI.Dropdown.style(qualDrop, 120)
+    UIDropDownMenu_Initialize(qualDrop, function()
+        for _, p in ipairs(QUAL_PRESETS) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text, info.value = p.label, p.value
+            info.func = function(self)
+                db.autoInitQuality = self.value
+                UIDropDownMenu_SetText(qualDrop, p.label)
+                ns.MsgInfo(string.format("Auto Init Quality: %s.", p.label))
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    UIDropDownMenu_SetText(qualDrop, labelForQual(db.autoInitQuality))
+
 
     -- ============================================================
     -- Panel 2 - Session stats (PATCH_NOTES §13a: 3-col grid instead of a
@@ -326,7 +363,7 @@ function ns.UI.Tabs.Settings.BuildInto(pane)
 
     -- Final scroll-child height: sum of panel heights + 6 px gaps + 4 px top
     -- margin + 8 px bottom padding. Keep in sync if panel heights change.
-    content:SetHeight(4 + 130 + 6 + 70 + 6 + 180 + 6 + 96 + 6 + 80 + 8)
+    content:SetHeight(4 + 170 + 6 + 70 + 6 + 180 + 6 + 96 + 6 + 80 + 8)
 end
 
 function ns.UI.Tabs.Settings.OnShow(pane)
