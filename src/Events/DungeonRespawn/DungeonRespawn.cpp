@@ -102,7 +102,12 @@ namespace DungeonRespawn
         }
 
         Enabled = sConfigMgr->GetOption<bool>("DungeonRespawn.Enable", false);
+
+        LOG_INFO("module", "DungeonRespawn enabled: {}", Enabled ? "true" : "false");
+
         respawnHpPct = sConfigMgr->GetOption<float>("DungeonRespawn.RespawnHealthPct", 50.0f);
+
+        LOG_INFO("module", "Respawn Health Percentage: {}", respawnHpPct);
 
         QueryResult qResult = CharacterDatabase.Query("SELECT `guid`, `map`, `x`, `y`, `z`, `o` FROM `dungeonrespawn_playerinfo`");
 

@@ -14,6 +14,8 @@ namespace CustomQuests
     void Quest52_WorldScript::OnAfterConfigLoad(bool /*reload*/)
     {
         Enabled = sConfigMgr->GetOption<bool>("Quests52.Enabled", true);
+
+        LOG_INFO("module", "Quest 52 enabled: {}", Enabled ? "true" : "false");
     }
 
     void Quest52_PlayerScript::OnPlayerCreatureKill(Player* player, Creature* creature)

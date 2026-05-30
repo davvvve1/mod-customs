@@ -29,6 +29,8 @@ namespace SeasonOfDiscovery
         {
             Enabled = true;
         }
+
+        LOG_INFO("module", "Season of Discovery enabled: {}", Enabled ? "true" : "false");
     }
 
     void SeasonOfDiscovery_PlayerScript::OnPlayerLogin(Player* player)
