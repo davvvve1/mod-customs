@@ -17,7 +17,7 @@ namespace SeasonOfDiscovery
         80870   // 6 - 300%
     };
 
-    void SeasonOfDiscovery::OnAfterConfigLoad(bool /*reload*/)
+    void SeasonOfDiscovery_WorldScript::OnAfterConfigLoad(bool /*reload*/)
     {
         BuffLevel = sConfigMgr->GetOption<uint32>("SOD.buff", 6);
 
@@ -31,7 +31,7 @@ namespace SeasonOfDiscovery
         }
     }
 
-    void SeasonOfDiscovery::OnPlayerLogin(Player* player)
+    void SeasonOfDiscovery_PlayerScript::OnPlayerLogin(Player* player)
     {
         if (!player)
         {
@@ -62,7 +62,7 @@ namespace SeasonOfDiscovery
         }
     }
 
-    void SeasonOfDiscovery::OnPlayerLogout(Player* player)
+    void SeasonOfDiscovery_PlayerScript::OnPlayerLogout(Player* player)
     {
         if (!Enabled || !player)
         {

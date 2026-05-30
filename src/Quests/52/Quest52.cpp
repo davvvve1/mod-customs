@@ -11,12 +11,12 @@ namespace CustomQuests
     constexpr uint32 CREATURE_PROWLER_ID = 118;
     constexpr uint32 CREATURE_GRAY_FOREST_WOLF = 1922;
 
-    void Quest52::OnAfterConfigLoad(bool /*reload*/)
+    void Quest52_WorldScript::OnAfterConfigLoad(bool /*reload*/)
     {
         Enabled = sConfigMgr->GetOption<bool>("Quests52.Enabled", true);
     }
 
-    void Quest52::OnPlayerCreatureKill(Player* player, Creature* creature)
+    void Quest52_PlayerScript::OnPlayerCreatureKill(Player* player, Creature* creature)
     {
         if (!Enabled || !player || !creature)
         {

@@ -14,21 +14,28 @@ namespace SeasonOfDiscovery
     inline bool Enabled;
     inline uint32 BuffLevel;
 
-    class SeasonOfDiscovery : public PlayerScript, public WorldScript
+    class SeasonOfDiscovery_PlayerScript : public PlayerScript
     {
     public:
-        SeasonOfDiscovery() : PlayerScript("SeasonOfDiscovery", {
+        SeasonOfDiscovery_PlayerScript() : PlayerScript("SeasonOfDiscovery_PlayerScript", {
             PLAYERHOOK_ON_LOGIN,
             PLAYERHOOK_ON_LOGOUT,
-        }),
-        WorldScript("SeasonOfDiscovery", {
-            WORLDHOOK_ON_AFTER_CONFIG_LOAD
         }) { }
 
     private:
-        void OnAfterConfigLoad(bool /*reload*/) override;
         void OnPlayerLogin(Player* player) override;
         void OnPlayerLogout(Player* player) override;
+    };
+
+    class SeasonOfDiscovery_WorldScript : public WorldScript
+    {
+    public:
+        SeasonOfDiscovery_WorldScript() : WorldScript("SeasonOfDiscovery_WorldScript", {
+            WORLDHOOK_ON_AFTER_CONFIG_LOAD
+        }){ }
+
+    private:
+        void OnAfterConfigLoad(bool /*reload*/) override;
     };
 }; // SeasonOfDiscovery
 
