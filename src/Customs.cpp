@@ -7,7 +7,7 @@ void SC_addCustomsScripts()
 
     new SeasonOfDiscovery::SeasonOfDiscovery_WorldScript();
     new SeasonOfDiscovery::SeasonOfDiscovery_PlayerScript();
-    
+
     new DungeonRespawn::DSWorldScript();
     new DungeonRespawn::DSPlayerScript();
 }
