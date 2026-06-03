@@ -478,33 +478,40 @@ end
 -- ----------------------------------------------------------
 -- Static popups
 -- ----------------------------------------------------------
+function ns.CleanupBots()
+    local bots = {}
+    local units = {}
+
+    if GetNumRaidMembers() > 0 then
+        for i = 1, GetNumRaidMembers() do table.insert(units, "raid" .. i) end
+    elseif GetNumPartyMembers() > 0 then
+        for i = 1, GetNumPartyMembers() do table.insert(units, "party" .. i) end
+    end
+
+    for _, u in ipairs(units) do
+        if UnitExists(u) and UnitIsPlayer(u) and not UnitIsUnit(u, "player") then
+            local name = UnitName(u)
+
+            if name then
+                table.insert(bots, name)
+            end
+        end
+    end
+
+    if #bots > 0 then
+        SendChatMessage(".playerbots bot remove *", "SAY")
+        LeaveParty()
+        return true
+    end
+    return false
+end
+
 StaticPopupDialogs["WARDEN_CONFIRM_CLEANUP"] = {
     text         = "Remove ALL bots from the raid?\n(sends .playerbots bot remove *)",
     button1      = YES, button2 = NO, timeout = 0,
     whileDead    = true, hideOnEscape = true,
     OnAccept     = function()
-        local bots = {}
-        local units = {}
-
-        if GetNumRaidMembers() > 0 then
-            for i = 1, GetNumRaidMembers() do table.insert(units, "raid" .. i) end
-        elseif GetNumPartyMembers() > 0 then
-            for i = 1, GetNumPartyMembers() do table.insert(units, "party" .. i) end
-        end
-
-        for _, u in ipairs(units) do
-            if UnitExists(u) and UnitIsPlayer(u) and not UnitIsUnit(u, "player") then
-                local name = UnitName(u)
-
-                if name then
-                    table.insert(bots, name)
-                end
-            end
-        end
-
-        if #bots > 0 then
-            SendChatMessage(".playerbots bot remove *", "SAY")
-            LeaveParty()
+        if ns.CleanupBots() then
             ns.MsgWarn("Cleanup: removed all bots.")
         else
             ns.MsgWarn("Cleanup: no bots to remove.")
@@ -585,9 +592,26 @@ end
 -- ----------------------------------------------------------
 -- Load banner
 -- ----------------------------------------------------------
+local isFirstLogin = true
+local autoSummonFrame = CreateFrame("Frame")
+autoSummonFrame:Hide()
+autoSummonFrame:SetScript("OnUpdate", function(self, elapsed)
+    self.elapsed = (self.elapsed or 0) + elapsed
+    if self.elapsed >= 2.5 then
+        self:Hide()
+        self.elapsed = 0
+        if ns.Engine and ns.Engine.WhisperAll then
+            ns.Engine.WhisperAll("summon")
+            ns.MsgInfo("Auto-summoning bots after teleport/zone.")
+        end
+    end
+end)
+
 ns.CoreFrame = CreateFrame("Frame", "WardenCoreFrame")
 ns.CoreFrame:RegisterEvent("PLAYER_LOGIN")
 ns.CoreFrame:RegisterEvent("PLAYER_LEVEL_UP")
+ns.CoreFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+ns.CoreFrame:RegisterEvent("PLAYER_LOGOUT")
 ns.CoreFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "PLAYER_LOGIN" then
         ns.MsgInfo("v" .. (GetAddOnMetadata(addonName, "Version") or "?")
@@ -595,6 +619,15 @@ ns.CoreFrame:SetScript("OnEvent", function(_, event, ...)
     elseif event == "PLAYER_LEVEL_UP" then
         local newLevel = ...
         ns.AutoInitOnLevelUp(newLevel)
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        if isFirstLogin then
+            isFirstLogin = false
+        else
+            autoSummonFrame.elapsed = 0
+            autoSummonFrame:Show()
+        end
+    elseif event == "PLAYER_LOGOUT" then
+        ns.CleanupBots()
     end
 end)
 
