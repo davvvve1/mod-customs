@@ -29,7 +29,7 @@ namespace SeasonOfDiscovery
         void OnPlayerUpdate(Player* player, uint32 diff) override;
         void OnPlayerLogout(Player* player) override;
 
-        std::unordered_map<ObjectGuid, uint32> _buffCheckTimers;
+        std::unordered_map<uint32, uint32> _buffCheckTimers;
     };
 
     class SeasonOfDiscovery_WorldScript : public WorldScript
