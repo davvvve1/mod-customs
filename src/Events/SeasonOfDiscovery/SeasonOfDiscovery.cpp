@@ -17,6 +17,9 @@ namespace SeasonOfDiscovery
         80870   // 6 - 300%
     };
 
+    constexpr uint32 SPELL_WARCHIEFS_BLESSING = 16609;
+    constexpr uint32 SPELL_SPIRIT_OF_ZANDALAR = 24425;
+
     void SeasonOfDiscovery_WorldScript::OnAfterConfigLoad(bool /*reload*/)
     {
         BuffLevel = sConfigMgr->GetOption<uint32>("SOD.buff", 6);
@@ -62,6 +65,16 @@ namespace SeasonOfDiscovery
         {
             player->CastSpell(player, SPELL_CUSTOM_BUFFS[BuffLevel], true);
         }
+
+        if (!player->HasAura(SPELL_WARCHIEFS_BLESSING))
+        {
+            player->CastSpell(player, SPELL_WARCHIEFS_BLESSING, true);
+        }
+
+        if (!player->HasAura(SPELL_SPIRIT_OF_ZANDALAR))
+        {
+            player->CastSpell(player, SPELL_SPIRIT_OF_ZANDALAR, true);
+        }
     }
 
     void SeasonOfDiscovery_PlayerScript::OnPlayerLogout(Player* player)
@@ -81,5 +94,8 @@ namespace SeasonOfDiscovery
                 player->RemoveAura(spellToCheck);
             }
         }
+
+        player->RemoveAura(SPELL_WARCHIEFS_BLESSING);
+        player->RemoveAura(SPELL_SPIRIT_OF_ZANDALAR);
     }
 };
