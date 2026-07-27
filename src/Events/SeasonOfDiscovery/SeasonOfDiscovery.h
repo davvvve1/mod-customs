@@ -8,6 +8,7 @@
 #include "ScriptMgr.h"
 #include "Player.h"
 #include "Config.h"
+#include <unordered_map>
 
 namespace SeasonOfDiscovery
 {
@@ -19,12 +20,16 @@ namespace SeasonOfDiscovery
     public:
         SeasonOfDiscovery_PlayerScript() : PlayerScript("SeasonOfDiscovery_PlayerScript", {
             PLAYERHOOK_ON_LOGIN,
+            PLAYERHOOK_ON_UPDATE,
             PLAYERHOOK_ON_LOGOUT,
         }) { }
 
     private:
         void OnPlayerLogin(Player* player) override;
+        void OnPlayerUpdate(Player* player, uint32 diff) override;
         void OnPlayerLogout(Player* player) override;
+
+        std::unordered_map<ObjectGuid, uint32> _buffCheckTimers;
     };
 
     class SeasonOfDiscovery_WorldScript : public WorldScript
