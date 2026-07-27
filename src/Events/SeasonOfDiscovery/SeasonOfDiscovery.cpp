@@ -19,6 +19,7 @@ namespace SeasonOfDiscovery
 
     constexpr uint32 SPELL_WARCHIEFS_BLESSING = 16609;
     constexpr uint32 SPELL_SPIRIT_OF_ZANDALAR = 24425;
+    constexpr uint32 WORLD_BUFF_REFRESH_INTERVAL = 30 * 60 * 1000;
 
     void SeasonOfDiscovery_WorldScript::OnAfterConfigLoad(bool /*reload*/)
     {
@@ -60,6 +61,8 @@ namespace SeasonOfDiscovery
             return;
         }
 
+        _buffCheckTimers[player->GetGUID().GetCounter()] = WORLD_BUFF_REFRESH_INTERVAL;
+
         // check if player already have aura then if not then cast aura to player
         if ((SPELL_CUSTOM_BUFFS[BuffLevel] != 0) && !player->HasAura(SPELL_CUSTOM_BUFFS[BuffLevel]))
         {
@@ -77,9 +80,36 @@ namespace SeasonOfDiscovery
         }
     }
 
-    void SeasonOfDiscovery_PlayerScript::OnPlayerLogout(Player* player)
+    void SeasonOfDiscovery_PlayerScript::OnPlayerUpdate(Player* player, uint32 diff)
     {
         if (!Enabled || !player)
+        {
+            return;
+        }
+
+        uint32& buffCheckTimer = _buffCheckTimers[player->GetGUID().GetCounter()];
+
+        if (buffCheckTimer > diff)
+        {
+            buffCheckTimer -= diff;
+            return;
+        }
+
+        buffCheckTimer = WORLD_BUFF_REFRESH_INTERVAL;
+        player->CastSpell(player, SPELL_WARCHIEFS_BLESSING, true);
+        player->CastSpell(player, SPELL_SPIRIT_OF_ZANDALAR, true);
+    }
+
+    void SeasonOfDiscovery_PlayerScript::OnPlayerLogout(Player* player)
+    {
+        if (!player)
+        {
+            return;
+        }
+
+        _buffCheckTimers.erase(player->GetGUID().GetCounter());
+
+        if (!Enabled)
         {
             return;
         }
