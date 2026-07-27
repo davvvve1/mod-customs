@@ -4,70 +4,37 @@
 
 #include "SeasonOfDiscovery.h"
 
+#include <algorithm>
+#include <limits>
+
 namespace SeasonOfDiscovery
 {
-    // EventCustomPlayerScript -> sod buff
-    constexpr uint32 SPELL_CUSTOM_BUFFS[] = {
-        0,      // 0 - Disabled
-        80865,  // 1 - 50%
-        80866,  // 2 - 100%
-        80867,  // 3 - 150%
-        80868,  // 4 - 200%
-        80869,  // 5 - 250%
-        80870   // 6 - 300%
-    };
-
     constexpr uint32 SPELL_WARCHIEFS_BLESSING = 16609;
     constexpr uint32 SPELL_SPIRIT_OF_ZANDALAR = 24425;
     constexpr uint32 WORLD_BUFF_REFRESH_INTERVAL = 30 * 60 * 1000;
 
     void SeasonOfDiscovery_WorldScript::OnAfterConfigLoad(bool /*reload*/)
     {
-        BuffLevel = sConfigMgr->GetOption<uint32>("SOD.buff", 6);
+        Enabled = sConfigMgr->GetOption<bool>("SOD.Enabled", true);
+        XPRate = sConfigMgr->GetOption<float>("SOD.XPRate", 4.0f);
 
-        if (BuffLevel < 1 || BuffLevel > 6)
+        if (XPRate < 0.0f)
         {
-            Enabled = false;
-        }
-        else
-        {
-            Enabled = true;
+            XPRate = 0.0f;
         }
 
         LOG_INFO("module", "Season of Discovery enabled: {}", Enabled ? "true" : "false");
+        LOG_INFO("module", "Season of Discovery XP rate: {:.2f}x", XPRate);
     }
 
     void SeasonOfDiscovery_PlayerScript::OnPlayerLogin(Player* player)
     {
-        if (!player)
-        {
-            return;
-        }
-
-        // This prevents them from stacking a sod's buff if the admin changed the config.
-        for (uint32 i = 0; i < sizeof(SPELL_CUSTOM_BUFFS) / sizeof(uint32); ++i)
-        {
-            uint32 spellToCheck = SPELL_CUSTOM_BUFFS[i];
-
-            // If they have a buff that IS NOT the currently configured one, remove it
-            if ((spellToCheck != 0) && (spellToCheck != SPELL_CUSTOM_BUFFS[BuffLevel]) && player->HasAura(spellToCheck))
-            {
-                player->RemoveAura(spellToCheck);
-            }
-        }
-
-        if (!Enabled)
+        if (!Enabled || !player)
         {
             return;
         }
 
         _buffCheckTimers[player->GetGUID().GetCounter()] = WORLD_BUFF_REFRESH_INTERVAL;
-
-        // check if player already have aura then if not then cast aura to player
-        if ((SPELL_CUSTOM_BUFFS[BuffLevel] != 0) && !player->HasAura(SPELL_CUSTOM_BUFFS[BuffLevel]))
-        {
-            player->CastSpell(player, SPELL_CUSTOM_BUFFS[BuffLevel], true);
-        }
 
         if (!player->HasAura(SPELL_WARCHIEFS_BLESSING))
         {
@@ -96,8 +63,16 @@ namespace SeasonOfDiscovery
         }
 
         buffCheckTimer = WORLD_BUFF_REFRESH_INTERVAL;
-        player->CastSpell(player, SPELL_WARCHIEFS_BLESSING, true);
-        player->CastSpell(player, SPELL_SPIRIT_OF_ZANDALAR, true);
+
+        if (!player->HasAura(SPELL_WARCHIEFS_BLESSING))
+        {
+            player->CastSpell(player, SPELL_WARCHIEFS_BLESSING, true);
+        }
+
+        if (!player->HasAura(SPELL_SPIRIT_OF_ZANDALAR))
+        {
+            player->CastSpell(player, SPELL_SPIRIT_OF_ZANDALAR, true);
+        }
     }
 
     void SeasonOfDiscovery_PlayerScript::OnPlayerLogout(Player* player)
@@ -109,23 +84,19 @@ namespace SeasonOfDiscovery
 
         _buffCheckTimers.erase(player->GetGUID().GetCounter());
 
-        if (!Enabled)
+        player->RemoveAura(SPELL_WARCHIEFS_BLESSING);
+        player->RemoveAura(SPELL_SPIRIT_OF_ZANDALAR);
+    }
+
+    void SeasonOfDiscovery_PlayerScript::OnPlayerGiveXP(Player* player, uint32& amount, Unit* /*victim*/, uint8 /*xpSource*/)
+    {
+        if (!Enabled || !player || amount == 0 || XPRate <= 0.0f)
         {
             return;
         }
 
-        // check if player has sod buffs
-        for (uint32 i = 0; i < sizeof(SPELL_CUSTOM_BUFFS) / sizeof(uint32); ++i)
-        {
-            uint32 spellToCheck = SPELL_CUSTOM_BUFFS[i];
-
-            if ((spellToCheck != 0) && player->HasAura(spellToCheck))
-            {
-                player->RemoveAura(spellToCheck);
-            }
-        }
-
-        player->RemoveAura(SPELL_WARCHIEFS_BLESSING);
-        player->RemoveAura(SPELL_SPIRIT_OF_ZANDALAR);
+        double scaledAmount = static_cast<double>(amount) * static_cast<double>(XPRate);
+        scaledAmount = std::min(scaledAmount, static_cast<double>(std::numeric_limits<uint32>::max()));
+        amount = static_cast<uint32>(scaledAmount);
     }
-};
+} // namespace SeasonOfDiscovery
